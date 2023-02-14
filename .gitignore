@@ -1,0 +1,19 @@
+# Ignore audio files
+
+*.wav
+*.mp3
+*.aiff
+*.flac
+
+# Vitrual environments
+
+.venv
+venv
+VENV
+
+# Python junk
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
