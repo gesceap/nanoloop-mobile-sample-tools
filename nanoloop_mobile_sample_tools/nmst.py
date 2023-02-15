@@ -109,14 +109,18 @@ def main():
     
     logging.basicConfig(level=args.debug)
 
-    commands.process(
+    processed_audio = commands.process(
         args.audio_inputs,
         concatenate=args.concatenate,
         mono=args.mono,
-        sample_rate=args.sample_rate,
-        bit_rate=args.bit_rate,
         compress=args.compress,
         normalize=args.normalize,
         reverse=args.reverse,
+    )
+
+    commands.save(
+        processed_audio,
+        sample_rate=args.sample_rate,
+        bit_rate=args.bit_rate,
         audio_output=args.audio_output
     )

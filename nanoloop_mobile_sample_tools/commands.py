@@ -14,6 +14,7 @@ Should only support basic actions in fixed order:
 import pedalboard
 import logging
 import numpy
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -23,8 +24,6 @@ def process(
         audio_inputs: list,
         concatenate: bool = False,
         mono: str = 'left',
-        sample_rate: float = 44100.0,
-        bit_rate: int = 16,
         speed_multiplier: float = 1.0,
         compress: str = None,
         normalize: bool = False,
@@ -34,7 +33,6 @@ def process(
     :param list audio_inputs: list of audio files.
     :param bool concatenate: concatenate the audio files before processing. (default; False)
     :param str mono: make audio mono. 'left' or 'right' or None i.e. leave it alone (default; None)
-    :param float sample_rate: sample rate to convert (default; 44100)
     :param int speed_multiplier: speed up the sample by a factor. (default; 1.0)
     :param str compress: compress the audio. 'soft' or 'hard' or None i.e. leave it alone (default; None)
     :param bool normalize: normalize the audio to 0 db. (default; False)
@@ -45,15 +43,12 @@ def process(
         (
             "process called with the following args; "
             "audio_inputs={audio_inputs}, concatenate={concatenate}, mono={mono}, "
-            "sample_rate={sample_rate}, bit_rate={bit_rate}, "
             "speed_multiplier={speed_multiplier}, compress={compress}, "
             "normalize={normalize}, reverse={reverse}"
         ).format(
             audio_inputs=audio_inputs,
             concatenate=concatenate,
             mono=mono,
-            sample_rate=sample_rate,
-            bit_rate=bit_rate,
             speed_multiplier=speed_multiplier,
             compress=compress,
             normalize=normalize,
@@ -72,6 +67,52 @@ def process(
         audios = [numpy.concatenate(audios)]
 
     return audios
+
+
+def save(
+        processed_audio: list,
+        sample_rate: float = 44100.0,
+        bit_rate: int = 16,
+        audio_output: str = "output.wav") -> None:
+    """Save the processed audio files.
+
+    :param list processed_audio: list of processed audio arrays.
+    :param float sample_rate: sample rate of output files.
+    :param int bit_rate: bit rate of output files.
+    :param str audio_output: filename to output to. If multiple files present use a prefix.
+    :return None:
+    """
+    logger.debug(
+        (
+            "save the processed audio with the following args; "
+            "sample_rate={sample_rate}, bit_rate={bit_rate}, audio_output={audio_output}"
+        ).format(
+            sample_rate=sample_rate,
+            bit_rate=bit_rate,
+            audio_output=audio_output
+        )
+    )
+    folder, filename = os.path.split(audio_output)
+    prefix, extension = os.path.splitext(filename)
+    
+    for index, processed in enumerate(processed_audio, 1):
+
+        suffix = "_{}{extension}".format(index, extension=extension)
+        if len(processed_audio) == 1:
+            suffix = "{extension}".format(index, extension=extension)
+        
+        output_filename = prefix + suffix
+
+        logger.debug("Writing audio to output filename; {}".format(output_filename))
+        
+        with pedalboard.io.AudioFile(
+            output_filename, 
+            "w", 
+            samplerate=sample_rate,
+            bit_depth=bit_rate,
+            num_channels=processed.shape[0]
+        ) as f:
+            f.write(processed)
 
 
 def make_mono(input_audio: numpy.ndarray, channel_name: str) -> numpy.ndarray:
