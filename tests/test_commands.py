@@ -30,8 +30,8 @@ def test_save_file(mock_audio_array):
     :return None:
     :raises AssertionError:
     """
-    commands.save(mock_audio_array, audio_output = "mock.wav")
-    assert os.path.isfile("mock.wav")
+    abspath = commands.save(mock_audio_array, audio_output = "mock.wav")
+    assert os.path.isfile("mock.wav") and os.path.isfile(abspath)
     os.remove("mock.wav")
 
 

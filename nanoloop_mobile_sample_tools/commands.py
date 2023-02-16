@@ -87,14 +87,14 @@ def save(
         processed_audio_array: numpy.ndarray,
         sample_rate: float = 44100.0,
         bit_rate: int = 16,
-        audio_output: str = "output.wav") -> None:
+        audio_output: str = "output.wav") -> str:
     """Save the processed audio files.
 
     :param list processed_audio: list of processed audio arrays.
     :param float sample_rate: sample rate of output files.
     :param int bit_rate: bit rate of output files.
     :param str audio_output: filename to output to. If multiple files present use a prefix.
-    :return None:
+    :return str: audio output file path
     """
     logger.info("Saving processed audio array to {}.".format(audio_output))
     logger.debug(
@@ -118,6 +118,8 @@ def save(
         f.write(processed_audio_array)
     
     logger.info("Completed saving audio files.")
+
+    return os.path.abspath(audio_output)
 
 
 def mono_audio(audio_array: numpy.ndarray, channel_name: str) -> numpy.ndarray:
