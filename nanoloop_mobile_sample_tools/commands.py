@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 def process(
         audio_inputs: list,
+        sample_rate: float = 44100.0,
+        speed_multiplier: float = 1.0,
         concatenate: bool = False,
         mono: str = 'left',
         compress: str = None,
@@ -43,10 +45,12 @@ def process(
         (
             "process called with the following args; "
             "audio_inputs={audio_inputs}, concatenate={concatenate}, mono={mono}, "
-            "compress={compress}, "
-            "normalize={normalize}, reverse={reverse}"
+            "compress={compress}, speed_multiplier={speed_multiplier}, "
+            "normalize={normalize}, reverse={reverse}, sample_rate={sample_rate}"
         ).format(
             audio_inputs=audio_inputs,
+            sample_rate=sample_rate,
+            speed_multiplier=speed_multiplier,
             concatenate=concatenate,
             mono=mono,
             compress=compress,
@@ -54,36 +58,35 @@ def process(
             reverse=reverse
         )
     )
-    audios_arrays = []
+    audio_arrays = []
     for audio_input in audio_inputs:
-        with pedalboard.io.AudioFile(audio_input, 'r') as f:
-            audios_arrays.append(f.read(f.frames))
+        with pedalboard.io.AudioFile(audio_input, 'r').resampled_to(sample_rate/speed_multiplier) as f:
+            audio_arrays.append(f.read(f.frames))
 
     if mono is not None:
-        audios_arrays = [mono_audio(audios_array, mono) for audios_array in audios_arrays]
+        audio_arrays = [mono_audio(audios_array, mono) for audios_array in audio_arrays]
 
     if concatenate:
-        logger.debug("Concatenating {} audio arrays.".format(len(audios_arrays)))
-        audios_arrays = [concatenate_audio(audios_arrays)]
+        logger.debug("Concatenating {} audio arrays.".format(len(audio_arrays)))
+        audio_arrays = [concatenate_audio(audio_arrays)]
 
     if compress is not None:
-        audios_arrays = [compress_audio(audios_array, compress) for audios_array in audios_arrays]
-
+        audio_arrays = [compress_audio(audio_array, compress, sample_rate) for audio_array in audio_arrays]
+        
     if normalize:
-        audios_arrays = [peak_normalize_audio(audios_array) for audios_array in audios_arrays]
+        audio_arrays = [peak_normalize_audio(audios_array) for audios_array in audio_arrays]
 
     if reverse:
-        audios_arrays = [numpy.flip(audioaudios_array) for audios_array in audios_arrays]
+        audio_arrays = [reverse_audio(audio_array) for audio_array in audio_arrays]
 
-    logger.info("Completed processing, outputting {} audio arrays.".format(len(audios_arrays)))
-    return audios_arrays
+    logger.info("Completed processing, outputting {} audio arrays.".format(len(audio_arrays)))
+    return audio_arrays
 
 
 def save(
-        processed_audio: list,
+        processed_audio_array: numpy.ndarray,
         sample_rate: float = 44100.0,
         bit_rate: int = 16,
-        speed_multiplier: float = 1.0,
         audio_output: str = "output.wav") -> None:
     """Save the processed audio files.
 
@@ -93,40 +96,26 @@ def save(
     :param str audio_output: filename to output to. If multiple files present use a prefix.
     :return None:
     """
-    logger.info("Saving {} processed audio arrays.".format(len(processed_audio)))
+    logger.info("Saving processed audio array to {}.".format(audio_output))
     logger.debug(
         (
             "save the processed audio with the following args; "
             "sample_rate={sample_rate}, bit_rate={bit_rate}, "
-            "audio_output={audio_output}, speed_multiplier={speed_multiplier}"
+            "audio_output={audio_output}"
         ).format(
             sample_rate=sample_rate,
             bit_rate=bit_rate,
-            audio_output=audio_output,
-            speed_multiplier=speed_multiplier
+            audio_output=audio_output
         )
-    )
-    folder, filename = os.path.split(audio_output)
-    prefix, extension = os.path.splitext(filename)
-    
-    for index, processed in enumerate(processed_audio, 1):
-
-        suffix = "_{}{extension}".format(index, extension=extension)
-        if len(processed_audio) == 1:
-            suffix = "{extension}".format(index, extension=extension)
-        
-        output_filename = prefix + suffix
-
-        logger.debug("Writing audio to output filename; {}".format(output_filename))
-        
-        with pedalboard.io.AudioFile(
-            output_filename, 
-            "w", 
-            samplerate=sample_rate*speed_multiplier,
-            bit_depth=bit_rate,
-            num_channels=processed.shape[0]
-        ) as f:
-            f.write(processed)
+    )    
+    with pedalboard.io.AudioFile(
+        audio_output, 
+        "w", 
+        samplerate=sample_rate,
+        bit_depth=bit_rate,
+        num_channels=processed_audio_array.shape[0]
+    ) as f:
+        f.write(processed_audio_array)
     
     logger.info("Completed saving audio files.")
 
@@ -171,17 +160,32 @@ def concatenate_audio(audio_arrays: numpy.ndarray) -> numpy.ndarray:
     return numpy.concatenate(audio_arrays, axis = 1)
 
 
-def compress_audio(audio_array: numpy.ndarray, compress: str) -> numpy.ndarray:
+def compress_audio(audio_array: numpy.ndarray, compress: str, sample_rate: float) -> numpy.ndarray:
     """Compress the audio using a pedalboard.
 
     :param numpy.ndarray audio_array:
     :param str compress: compression type 'hard' or 'soft'
     :return numpy.ndarray:
     """
+    board = pedalboard.Pedalboard()
+    
     gain = pedalboard.Gain(gain_db=2)
-    compressor = pedalboard.Compressor(threshold_db=-15, ratio=10)
+    compressor = pedalboard.Compressor(threshold_db=-10, ratio=10)
+
     if compress == 'hard':
         gain = pedalboard.Gain(gain_db=10)
-        compressor = pedalboard.Compressor(threshold_db=-30, ratio=20)
-    board = pedalboard.Pedalboard([gain, compressor])
-    return board(audio_array)
+        compressor = pedalboard.Compressor(threshold_db=-20, ratio=20)
+    
+    board.append(gain)
+    board.append(compressor)
+
+    effected = board(audio_array, sample_rate)
+    return effected
+
+
+def reverse_audio(audio_array: numpy.ndarray) -> numpy.ndarray:
+    """Reverse the audio array.
+
+    :return numpy.ndarray:
+    """
+    return numpy.flip(audio_array)

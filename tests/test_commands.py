@@ -4,49 +4,35 @@ import numpy
 import math
 
 
-def test_process(audio_input_files):
+def test_process(mock_audio_input_files):
     """Test calling process with audio files
 
     :return None:
     :raises AssertionError:
     """
-    assert commands.process(audio_input_files)
+    assert commands.process(mock_audio_input_files)
 
 
-def test_process_concatenate(audio_input_files):
+def test_process_concatenate(mock_audio_input_files):
     """Test calling process concatenating audio file
 
     :return None:
     :raises AssertionError:
     """
-    assert len(audio_input_files) > 1
-    processed_audio = commands.process(audio_input_files, concatenate=True)
-    assert len(processed_audio) == 1 and len(audio_input_files) > 1
+    assert len(mock_audio_input_files) > 1
+    processed_audio = commands.process(mock_audio_input_files, concatenate=True)
+    assert len(processed_audio) == 1 and len(mock_audio_input_files) > 1
 
 
-def test_save_single_file(mock_audio_array):
-    """Test calling process with a single audio file
+def test_save_file(mock_audio_array):
+    """Test calling wave with an audio array.
 
     :return None:
     :raises AssertionError:
     """
-    processed_audio = [mock_audio_array]
-    commands.save(processed_audio, audio_output = "mock.wav")
+    commands.save(mock_audio_array, audio_output = "mock.wav")
     assert os.path.isfile("mock.wav")
     os.remove("mock.wav")
-
-
-def test_save_multiple_files(mock_audio_array):
-    """Test calling process with multiple audio files
-
-    :return None:
-    :raises AssertionError:
-    """
-    processed_audio = [mock_audio_array, mock_audio_array]
-    commands.save(processed_audio, audio_output = "mock.wav")
-    assert os.path.isfile("mock_1.wav") and  os.path.isfile("mock_2.wav")
-    os.remove("mock_1.wav")
-    os.remove("mock_2.wav")
 
 
 def test_make_mono_left(mock_audio_array):
@@ -77,7 +63,19 @@ def test_peak_normalize(mock_audio_array):
     """
     assert not math.isclose(numpy.max(mock_audio_array), 1.0)
     normalized_audio = commands.peak_normalize_audio(mock_audio_array)
-    assert math.isclose(numpy.max(normalized_audio), 1.0)
+    assert math.isclose(numpy.max(normalized_audio), 1.0, abs_tol = 0.000001)
+
+
+def test_reverse_audio():
+    """Test compressing audio.
+
+    :return None:
+    :raises AssertionError:
+    """
+    audio_array = numpy.array([1,2,3,4])
+    expected_audio_array = numpy.array([4,3,2,1])
+    reversed_audio_array = commands.reverse_audio(audio_array)
+    assert numpy.array_equiv(reversed_audio_array, expected_audio_array)
 
 
 def test_compress_audio(mock_audio_array):
@@ -86,4 +84,4 @@ def test_compress_audio(mock_audio_array):
     :return None:
     :raises AssertionError:
     """
-    assert commands.compress_audio(mock_audio_array, 'soft').any()
+    assert commands.compress_audio(mock_audio_array, 'soft', 44100.0).any()

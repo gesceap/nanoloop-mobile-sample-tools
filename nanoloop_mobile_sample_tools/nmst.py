@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 from nanoloop_mobile_sample_tools import commands
 
 
@@ -97,7 +98,7 @@ def get_parser() -> argparse.Namespace:
         const="output.wav",
         type=str,
         default="output.wav",
-        help="Audio output filename. Default 'output.wav'",
+        help="Audio output filename. Default 'output.wav'. Audio filenames appended.",
     )
     return parser
 
@@ -109,8 +110,10 @@ def main():
     
     logging.basicConfig(level=args.debug)
 
-    processed_audio = commands.process(
+    processed_audio_arrays = commands.process(
         args.audio_inputs,
+        sample_rate=args.sample_rate,
+        speed_multiplier=args.speed_multiplier,
         concatenate=args.concatenate,
         mono=args.mono,
         compress=args.compress,
@@ -118,10 +121,22 @@ def main():
         reverse=args.reverse,
     )
 
-    commands.save(
-        processed_audio,
-        sample_rate=args.sample_rate,
-        bit_rate=args.bit_rate,
-        speed_multiplier=args.speed_multiplier,
-        audio_output=args.audio_output
-    )
+    for processed_audio_array, audio_input in zip(processed_audio_arrays, args.audio_inputs):
+
+        _, output_filename = os.path.split(args.audio_output)
+        prefix, _ = os.path.splitext(output_filename)
+
+        _, input_filename = os.path.split(audio_input)
+        suffix, _ = os.path.splitext(input_filename)
+
+        audio_output = "{prefix}_{suffix}.wav".format(prefix=prefix, suffix=suffix)
+        
+        if len(processed_audio_arrays) == 1 and args.concatenate:
+            audio_output = args.audio_output
+
+        commands.save(
+            processed_audio_array,
+            sample_rate=args.sample_rate,
+            bit_rate=args.bit_rate,
+            audio_output=audio_output
+        )

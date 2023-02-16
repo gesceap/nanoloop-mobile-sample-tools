@@ -3,7 +3,7 @@ import os
 from nanoloop_mobile_sample_tools import nmst
 
 
-def test_main(audio_input_files):
+def test_main(mock_audio_input_files):
     """Test calling main in CLI.
 
     :return None:
@@ -11,8 +11,20 @@ def test_main(audio_input_files):
     mock_output_filename = "mock.wav"
     sys.argv = [
         "",
-        *audio_input_files,
+        *mock_audio_input_files,
         "--concatenate",
+        "--compress",
+        "hard",
+        "--reverse",
+        "--mono",
+        "--debug",
+        "--sample-rate",
+        "22050.0",
+        "--bit-rate",
+        "8",
+        "--normalize",
+        "--speed-multiplier",
+        "2.0",
         "--audio-output",
         mock_output_filename
     ]
