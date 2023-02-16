@@ -122,5 +122,6 @@ def main():
         processed_audio,
         sample_rate=args.sample_rate,
         bit_rate=args.bit_rate,
+        speed_multiplier=args.speed_multiplier,
         audio_output=args.audio_output
     )

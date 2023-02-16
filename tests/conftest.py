@@ -19,14 +19,15 @@ def audio_input_files():
             lambda fn: "{}/{}".format(ABSPATH, fn), 
             [
                 "audio_input_1.wav",
-                "audio_input_2.wav"
+                "audio_input_2.wav",
+                "think.wav"
             ]
         )
     )
 
 
 @pytest.fixture(scope="session")
-def mock_audio_input():
+def mock_audio_array():
     """Fixture for mock audio input array.
 
     :return numpy.ndarray:
