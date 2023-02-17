@@ -3,8 +3,10 @@ import os
 import zipfile
 import streamlit as st
 from nanoloop_mobile_sample_tools import commands
+from nanoloop_mobile_sample_tools import version
 
 st.title("Nanoloop Mobile Sample Tools")
+st.caption("Version {} - [Source](https://github.com/gesceap/nanoloop-mobile-sample-tools)".format(version.__version__))
 
 st.header("Audio Options")
 
@@ -121,3 +123,6 @@ if download:
     bytes_to_download = None
     download = False
     uploaded_files = []
+
+
+st.write("Consider supporting my music - https://gesceap.bandcamp.com/")
