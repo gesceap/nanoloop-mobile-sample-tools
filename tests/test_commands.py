@@ -35,6 +35,30 @@ def test_save_file(mock_audio_array):
     os.remove("mock.wav")
 
 
+def test_save_file_16_bit(mock_audio_array):
+    """Test calling wave with an audio array to 16 bit
+
+    :return None:
+    :raises AssertionError:
+    """
+    filename = "mock16.wav"
+    abspath = commands.save(mock_audio_array, audio_output = filename, bit_rate=16, sample_rate=22050)
+    assert os.path.isfile(filename) and os.path.isfile(abspath)
+    os.remove(filename)
+
+
+def test_save_file_8_bit(mock_audio_array):
+    """Test calling wave with an audio array to 8 bit
+
+    :return None:
+    :raises AssertionError:
+    """
+    filename = "mock8.wav"
+    abspath = commands.save(mock_audio_array, audio_output = filename, bit_rate=8, sample_rate=8000)
+    assert os.path.isfile(filename) and os.path.isfile(abspath)
+    os.remove(filename)
+
+
 def test_make_mono_left(mock_audio_array):
     """Test make mono left.
 

@@ -15,6 +15,7 @@ import pedalboard
 import logging
 import numpy
 import os
+import wave
 
 
 logger = logging.getLogger(__name__)
@@ -107,16 +108,32 @@ def save(
             bit_rate=bit_rate,
             audio_output=audio_output
         )
-    )    
-    with pedalboard.io.AudioFile(
-        audio_output, 
-        "w", 
-        samplerate=sample_rate,
-        bit_depth=bit_rate,
-        num_channels=processed_audio_array.shape[0]
-    ) as f:
-        f.write(processed_audio_array)
-    
+    )
+    data = None
+    sampwidth = None
+    if bit_rate == 8:
+        # 8-bit
+        sampwidth = 1
+        multiplier = 127
+        data = (
+            (processed_audio_array * multiplier) + multiplier
+        ).astype(numpy.uint8)
+    else: # bit_rate == 16:
+        # 16 bit
+        sampwidth = 2
+        multiplier = 32767
+        data = (
+            processed_audio_array * multiplier
+        ).astype(numpy.int16)
+    print(bit_rate, data.min(), data.max(), data)
+
+    # Let the operation fail if bit-rate is not valid, i.e. data is None
+    with wave.open(audio_output, 'w') as f:
+        f.setnchannels(processed_audio_array.shape[0])
+        f.setsampwidth(sampwidth) # 1=8-bit unsigned, 2=16-bit signed 
+        f.setframerate(sample_rate)
+        f.writeframes(data)
+
     logger.info("Completed saving audio files.")
 
     return os.path.abspath(audio_output)
