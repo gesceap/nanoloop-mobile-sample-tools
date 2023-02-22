@@ -125,8 +125,7 @@ def save(
         data = (
             processed_audio_array * multiplier
         ).astype(numpy.int16)
-    print(bit_rate, data.min(), data.max(), data)
-
+    
     # Let the operation fail if bit-rate is not valid, i.e. data is None
     with wave.open(audio_output, 'w') as f:
         f.setnchannels(processed_audio_array.shape[0])
