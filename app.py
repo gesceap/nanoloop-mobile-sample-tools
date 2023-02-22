@@ -83,14 +83,14 @@ with st.form("uploader-form", clear_on_submit=True):
                     if concatenate and len(audio_arrays) == 1:
                         audio_output =  os.path.join(processed_tempdir, "processed.wav")
 
-                    commands.save(
+                    audio_outputs.append(
+                        commands.save(
                         audio_array,
                         sample_rate,
                         bit_rate,
                         audio_output
+                        )
                     )
-
-                    audio_outputs.append(audio_output)
 
                 st.write("Saved {} audio outputs.".format(len(audio_outputs)))
             
